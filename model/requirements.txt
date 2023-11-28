@@ -1,0 +1,7 @@
+cupy_cuda12x==12.2.0
+h5py==3.10.0
+opencv_contrib_python==4.8.1.78
+Pillow==10.0.1
+Pillow==10.1.0
+setuptools==68.2.2
+torchvision==0.16.1
