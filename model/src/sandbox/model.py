@@ -58,10 +58,10 @@ class Model:
             'b': np.zeros((trainable_layers[layer + 1].units, 1)) # Zeros for biases
         } for layer in range(-1, len(trainable_layers) - 1)]
 
-        # For non-train layers, we want to set the parameters to None
+        # For non-train layers, we want to set the parameters to empty arrays
         for layer in range(len(self.layers)):
             if not self.layers[layer].trainable:
-                self.parameters.insert(layer, {'W': None, 'b': None})
+                self.parameters.insert(layer, {'W': np.array([]), 'b': np.array([])})
 
     # Shuffle data
     def shuffle(self, X, Y):
@@ -70,11 +70,14 @@ class Model:
         return X[:, permutation], Y[:, permutation]
 
     # Forward propagate through model
-    def model_forward(self, A):
+    def model_forward(self, A, train=True):
         self.caches = []
 
+        # Exclude layers like dropout when not training
+        layers = [i for i in range(len(self.layers)) if self.layers[i].trainable or train]
+        
         # Loop through hidden layers, calculating activations
-        for layer in range(len(self.layers)):
+        for layer in layers:
             A_prev = A
             A, Z = self.layers[layer].forward(A_prev, **self.parameters[layer])
             self.caches.append({
@@ -108,12 +111,15 @@ class Model:
 
     # Predict given input values and weights / biases
     def predict(self, X, prediction_type=lambda x: x):
-        prediction = self.model_forward(X.T).T # Model outputs
+        prediction = self.model_forward(X.T, train=False).T # Model outputs
         return prediction_type(prediction)
 
     # Save parameters to JSON file
     def save(self, name='parameters.json', dir=''):
-        jsonified_params = [{'W': layer['W'].tolist(), 'b': layer['b'].tolist()} for layer in self.parameters]
+        jsonified_params = [
+            {'W': layer['W'].tolist(), 'b': layer['b'].tolist()}
+            for layer in [layer for layer in self.parameters if layer['W'].size != 0]
+        ]
         with open(dir + name, 'w') as file:
             json.dump(jsonified_params, file)
 

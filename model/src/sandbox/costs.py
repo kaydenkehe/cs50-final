@@ -17,6 +17,7 @@ class BinaryCrossentropy:
         return -(np.divide(Y, AL) - np.divide(1 - Y, 1 - AL))
 
 # Categorical Cross Entropy - Multiclass classification
+# TODO: Implement
 class CategoricalCrossentropy:
     def __init__(self):
         pass
