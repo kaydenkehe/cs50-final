@@ -1,3 +1,4 @@
 model/.vscode/
 model/src/sandbox.egg-info/
 model/src/sandbox/__pycache__/
+.vscode/

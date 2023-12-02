@@ -38,9 +38,9 @@ class Model:
         # Loop through epochs
         for i in range(self.epochs + 1):
             X, Y = self.shuffle(X, Y) # Shuffle data
-            AL = self.model_forward(X) # Forward propagate
+            AL = self.forward_pass(X) # Forward propagate
             cost = self.cost_type.forward(AL, Y) # Calculate cost
-            grads = self.model_backward(AL, Y, self.cost_type) # Calculate gradient
+            grads = self.backward_pass(AL, Y, self.cost_type) # Calculate gradient
             self.update_parameters(grads, self.learning_rate) # Update weights and biases
             self.costs.append(cost) # Update costs list
             
@@ -70,10 +70,10 @@ class Model:
         return X[:, permutation], Y[:, permutation]
 
     # Forward propagate through model
-    def model_forward(self, A, train=True):
+    def forward_pass(self, A, train=True):
         self.caches = []
 
-        # Exclude layers like dropout when not training
+        # Exclude non-trainable layers like dropout when not training
         layers = [i for i in range(len(self.layers)) if self.layers[i].trainable or train]
         
         # Loop through hidden layers, calculating activations
@@ -90,7 +90,7 @@ class Model:
         return A
 
     # Find derivative with respect to each activation, weight, and bias
-    def model_backward(self, AL, Y, cost):
+    def backward_pass(self, AL, Y, cost):
         grads = [None] * len(self.layers)
         dA_prev = cost.backward(AL, Y.reshape(AL.shape)) # Find derivative of cost with respect to final activation
         
@@ -111,14 +111,14 @@ class Model:
 
     # Predict given input values and weights / biases
     def predict(self, X, prediction_type=lambda x: x):
-        prediction = self.model_forward(X.T, train=False).T # Model outputs
+        prediction = self.forward_pass(X.T, train=False).T # Model outputs
         return prediction_type(prediction)
 
     # Save parameters to JSON file
     def save(self, name='parameters.json', dir=''):
         jsonified_params = [
             {'W': layer['W'].tolist(), 'b': layer['b'].tolist()}
-            for layer in [layer for layer in self.parameters if layer['W'].size != 0]
+            for layer in [layer for layer in self.parameters if layer['W'].size != 0] # Exclude empty arrays (for dropout layers, for example)
         ]
         with open(dir + name, 'w') as file:
             json.dump(jsonified_params, file)
