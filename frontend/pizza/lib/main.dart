@@ -1,17 +1,20 @@
 // ignore_for_file: use_build_context_synchronously, library_private_types_in_public_api
 
 import 'dart:convert';
+import 'package:camera/camera.dart';
+import 'package:image/image.dart' as I;
 import 'package:flutter/material.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as requests;
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher_string.dart';
 
 void main() async {
   await GetStorage.init();
   runApp(const App());
 }
 
-String endpoint = ''; // Server endpoint
+String endpoint = 'http://10.250.1.195:12999'; // Server endpoint
 final storage = GetStorage();
 
 // Colors
@@ -49,12 +52,8 @@ class App extends StatelessWidget {
           fontFamily: 'Comfortaa', scaffoldBackgroundColor: backgroundColor),
       initialRoute: getInitialRoute(),
       routes: {
-        // Login section
         '/login': (context) => const LoginPage(),
-
         '/login/create_account': (context) => const CreateAccountPage(),
-
-        // Home section
         '/home': (context) => const HomePage(),
       },
       debugShowCheckedModeBanner: false,
@@ -82,14 +81,13 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  bool obscurePassword = true; // Whether password is obscured or not
+  bool obscurePassword = true;
   var passwordVisibleIcon =
       Icon(Icons.remove_red_eye_outlined, color: activeColor);
 
   TextEditingController passwordController = TextEditingController();
   TextEditingController usernameController = TextEditingController();
 
-  // Login information submitted
   loginSubmit() async {
     String username = usernameController.text;
     String password = passwordController.text;
@@ -101,9 +99,7 @@ class _LoginPageState extends State<LoginPage> {
     var response = await sendRequest('login', postJSON, context);
     if (response['message'] == 'failure') {
       alert('Incorrect username or password', context);
-    } else if (response['msg'] == 'success') {
-      // User has successfully logged in
-      // Write user id and name to device storage
+    } else if (response['message'] == 'success') {
       storage.write('username', username);
       Navigator.of(context)
           .pushNamedAndRemoveUntil('/home', (Route<dynamic> route) => false);
@@ -609,10 +605,138 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  late List<CameraDescription> cameras;
+  late CameraController cameraController;
+
+  @override
+  void initState() {
+    setupCamera();
+    super.initState();
+  }
+
+  void setupCamera() async {
+    cameras = await availableCameras();
+    cameraController =
+        CameraController(cameras[0], ResolutionPreset.low, enableAudio: false);
+    await cameraController.initialize().then((_) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    cameraController.dispose();
+    super.dispose();
+  }
+
+  void submitPhoto() async {
+    try {
+      final XFile photoXFile = await cameraController.takePicture();
+      final imageData =
+          I.decodeImage(await photoXFile.readAsBytes())?.getBytes();
+      var response =
+          await sendRequest('predict', {'image': imageData}, context);
+      if (response['prediction'] == 0) {
+        alert('Not Pizza', context);
+      } else if (response['prediction'] == 1) {
+        alert('Pizza', context);
+      }
+    } catch (e) {
+      alert("Error sending photo", context);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    // TODO: implement build
-    throw UnimplementedError();
+    if (!cameraController.value.isInitialized) {
+      return const SizedBox();
+    } else {
+      return Scaffold(
+          backgroundColor: backgroundColorDark,
+          resizeToAvoidBottomInset: false,
+          body: Center(
+              child: Column(children: [
+            Expanded(
+                child: Container(
+              margin: const EdgeInsets.all(10.0),
+              child: ClipRRect(
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(25.0),
+                  topRight: Radius.circular(25.0),
+                  bottomRight: Radius.circular(25.0),
+                  bottomLeft: Radius.circular(25.0),
+                ),
+                child: AspectRatio(
+                  aspectRatio: 1,
+                  child: CameraPreview(cameraController),
+                ),
+              ),
+            )),
+            Container(
+                height: 60.0,
+                width: double.infinity,
+                padding: const EdgeInsets.only(
+                    top: 5.0, left: 20.0, right: 20.0, bottom: 5.0),
+                decoration: BoxDecoration(
+                    color: activeColor,
+                    borderRadius: const BorderRadius.only(
+                      topRight: Radius.circular(25.0),
+                      topLeft: Radius.circular(25.0),
+                    )),
+                child: Row(
+                  children: [
+                    IconButton(
+                      onPressed: () {
+                        launchUrlString('https://www.youtube.com/@kaydenkehe');
+                      },
+                      icon: Icon(Icons.smart_display_outlined,
+                          size: 35, color: backgroundColorDark),
+                    ),
+                    const Spacer(),
+                    OutlinedButton(
+                      style: ButtonStyle(
+                        padding: MaterialStateProperty.all(
+                            const EdgeInsets.all(12.0)),
+                        backgroundColor:
+                            MaterialStateProperty.all(backgroundColorDark),
+                        side: MaterialStateProperty.all(
+                            BorderSide(color: backgroundColorDark)),
+                        shape: MaterialStateProperty.all(
+                          RoundedRectangleBorder(
+                            side: BorderSide(color: backgroundColorDark),
+                            borderRadius: BorderRadius.circular(15.0),
+                          ),
+                        ),
+                      ),
+                      child: Row(children: [
+                        Text('Take Photo',
+                            style: TextStyle(
+                              color: activeColor,
+                              fontSize: 15.0,
+                            )),
+                        const SizedBox(width: 5.0),
+                        Icon(Icons.camera_alt_outlined,
+                            size: 20, color: activeColor)
+                      ]),
+                      onPressed: () => submitPhoto(),
+                    ),
+                    const Spacer(),
+                    IconButton(
+                      onPressed: () {
+                        storage.remove('username');
+                        Navigator.of(context).pushNamedAndRemoveUntil(
+                            '/login', (Route<dynamic> route) => false);
+                      },
+                      icon: Icon(Icons.logout,
+                          size: 35, color: backgroundColorDark),
+                    ),
+                  ],
+                )),
+          ])));
+    }
   }
 }
 
@@ -629,7 +753,8 @@ alert(String message, BuildContext context) {
               Text(message, style: TextStyle(color: textColor, fontSize: 17.0)),
           actions: [
             TextButton(
-              child: Text('Okay', style: TextStyle(color: activeColor)),
+              child: Text('Okay',
+                  style: TextStyle(color: activeColor, fontSize: 15.0)),
               onPressed: () {
                 Navigator.of(context).pop();
               },
@@ -641,8 +766,7 @@ alert(String message, BuildContext context) {
 
 //! --- SEND HTTP REQUEST ---
 
-sendRequest(String path, var queries, BuildContext context,
-    [Map<String, String>? postBody]) async {
+sendRequest(String path, var postJSON, BuildContext context) async {
   try {
     await requests
         .get(Uri.parse('$endpoint/test'))
@@ -653,24 +777,14 @@ sendRequest(String path, var queries, BuildContext context,
   }
 
   try {
-    String request = '$endpoint/$path?'; // Create address to send request to
-    queries.forEach((k, v) {
-      request += '$k=$v&'; // Add request queries
-    });
-    if (postBody == null) {
-      requests.Response response =
-          await requests.get(Uri.parse(request)); // Make GET request
-      return json.decode(response.body);
-    } else {
-      // Make POST request
-      requests.Response response = await requests.post(Uri.parse(request),
-          body: jsonEncode(postBody),
-          headers: {
-            'Content-Type': 'application/json',
-            'accept': 'application/json'
-          });
-      return json.decode(response.body);
-    }
+    String request = '$endpoint/$path';
+    requests.Response response = await requests.post(Uri.parse(request),
+        body: jsonEncode(postJSON),
+        headers: {
+          'Content-Type': 'application/json',
+          'accept': 'application/json'
+        });
+    return json.decode(response.body);
   } catch (e) {
     alert('Something went wrong', context);
     return 0;
