@@ -4,11 +4,17 @@ This repository contains the source code for a pizza image classification mobile
 
 ## Frontend
 
-The frontend is built using Flutter/Dart and can be found in the `frontend/pizza` directory. Here, the only altered file is `main.dart`, with the rest of the files being standard files that are automatically populated upon the creation of a new Flutter project. 
+The frontend is built using Flutter/Dart and can be found in the `frontend/pizza` directory. There are few altered files here, with the most important being `main.dart`, and most of the rest of the files being standard files that are automatically populated upon the creation of a new Flutter project. 
 
 **main.dart**
 
-DESCRIBE MAIN.DART
+`main.dart` essentially contains the entire app split up into various pages.
+
+- The first several lines of the file handle running the app, initializing the persistent storage, and declaring global variables (like colors).
+- The MaterialApp section handles some app configuration, setting up routes for different pages, setting the default font, and determining whether the user is logged in.
+- The login, registration, and home pages are fairly straightforward - They each contain the design for their pages as well as functions to handle submitting login/registration/image information to the server.
+- The alert and result widgets are custom widgets used to easily alert the user when something goes wrong and show them the model prediction.
+- The final `sendRequest` function simplifies the process of sending POST requests to the server by requiring just a URL path and a JSON object to be sent in the POST body.
 
 ## Server
 
@@ -16,7 +22,7 @@ The backend of the project is a server built using the Python and Flask and can 
 
 - `parameters.json` - Contains the parameters generated as a result of training the neural network to detect pizza. These parameters are loaded into the model in `app.py`.
 - `users.db` - Database containing the usernames and (hashed) passwords for all registered users.
-- `app.py` - Python / Flask server that handles user registration, user login, and pizza prediction.
+- `app.py` - Python / Flask server that handles user registration, user login, and pizza prediction. Includes a test directory used to establish that the server is running, login and registration directories to handle login and registration, and a prediction directory that transforms an image received in a POST request and uses the model to predict whether the image contains a pizza.
 
 Nothing here is really interesting from a design standpoint. 
 

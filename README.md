@@ -11,6 +11,7 @@ These instructions assume that you intend to use VSCode, and that you intend to 
 - If you haven't already, install [VSCode](https://code.visualstudio.com/download). Upon installing VSCode, open the project folder and install the Python extension.
 - In your VSCode terminal, ensure that you're in the top-level project directory (you should be able to see the `model`, `frontend`, and `backend` folders), and run the command `pip install -r requirements.txt` in your VSCode terminal to install the necessary Python packages.
 - Run `app.py`.
+- If using Windows, run `ipconfig` in the command prompt to find your local IP address, labeled as 'IPV4'. Make note of this, as well as the port `app.py` is running on.
 
 **Installing the App**
 
@@ -20,18 +21,23 @@ The specific instructions here would vary by phone model and operating system, s
 - Add the path to the `bin` folders in your Flutter and Dart installations to your `Path` system environment variable.
 - Install the Flutter and Dart VSCode extensions.
 - Ensure that Flutter is operating correctly by using the `flutter doctor` command in your VSCode terminal. Disregard issues related to compiling to web or desktop.
-- On your Android device, access your developer options and enable USB debugging.
+- On your Android device, access your developer options menu and enable USB debugging.
+- In `main.dart`, change `endpoint` variable near the top of the file to reflect the local IP and port number you took note of earlier. It should look like `http://<ip>:<port>`.
 - Connect your phone to your laptop via a USB cable, click 'allow' on your phone, run `flutter devices` in your VSCode terminal to ensure that Flutter has detected your phone, and run `flutter run` to compile the app to your phone.
 
 **Using the App**
 
 The app is relatively simple, and use of it should be fairly intuitive. Upon first launching the app, you'll be greeted with a login screen, where you should either log in or register a new account with a username and password. Once you've successfully logged in to the app, you'll be greeted with a view of your camera, where you can take photos and have our model guess whether your photo contains pizza or not!
 
+The bottom bar has three buttons - The leftmost button opens my YouTube channel, the rightmost button logs the user out, and the middle button takes a photo for prediction.
+
 ## Using the Model
+
+These instructions assume that you've installed the required Pip packages using the command found in **Running the Server**.
 
 **Setup**
 
-Install the package: `python -m pip install -e $path to /src$`
+Install the package: `python -m pip install -e <path to /src>`
 
 **Usage**
 

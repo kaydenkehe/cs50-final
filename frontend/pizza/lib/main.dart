@@ -10,6 +10,7 @@ import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 
 void main() async {
+  // The username is stored to indicate that a user is signed in
   await GetStorage.init();
   runApp(const App());
 }
@@ -51,6 +52,7 @@ class App extends StatelessWidget {
       theme: ThemeData(
           fontFamily: 'Comfortaa', scaffoldBackgroundColor: backgroundColor),
       initialRoute: getInitialRoute(),
+      // Establish page routes
       routes: {
         '/login': (context) => const LoginPage(),
         '/login/create_account': (context) => const CreateAccountPage(),
@@ -88,10 +90,12 @@ class _LoginPageState extends State<LoginPage> {
   TextEditingController passwordController = TextEditingController();
   TextEditingController usernameController = TextEditingController();
 
+  // Submit login request
   loginSubmit() async {
     String username = usernameController.text;
     String password = passwordController.text;
 
+    // Send login request to server, handle response accordingly
     var postJSON = {
       'username': username,
       'password': password,
@@ -301,9 +305,8 @@ class CreateAccountPage extends StatefulWidget {
 }
 
 class _CreateAccountPageState extends State<CreateAccountPage> {
-  bool passwordObscure = true; // Whether password field is obscured
-  bool confirmPasswordObscure =
-      true; // Whether confirm password field is obscured
+  bool passwordObscure = true;
+  bool confirmPasswordObscure = true;
   var passwordVisibleIcon =
       Icon(Icons.remove_red_eye_outlined, color: activeColor);
   var confirmPasswordVisibleIcon =
@@ -316,11 +319,14 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
 
   // Create account
   createAccountSubmit() async {
+    // Ensure all fields contain information
     if (usernameController.text.isNotEmpty &&
         passwordController.text.isNotEmpty &&
         confirmPasswordController.text.isNotEmpty &&
         emailController.text.isNotEmpty) {
+      // Ensure passwords match
       if (passwordController.text == confirmPasswordController.text) {
+        // Send account registration request to server, handle result accordingly
         var queries = {
           'username': usernameController.text,
           'password': passwordController.text,
@@ -328,9 +334,9 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
         };
         var response = await sendRequest('register', queries, context);
 
-        if (response['msg'] == 'exist') {
+        if (response['message'] == 'exists') {
           alert('Username already exists', context);
-        } else if (response['msg'] == 'success') {
+        } else if (response['message'] == 'success') {
           storage.write('username', usernameController.text);
           Navigator.of(context).pushNamedAndRemoveUntil(
               '/home', (Route<dynamic> route) => false);
@@ -632,17 +638,20 @@ class _HomePageState extends State<HomePage> {
     super.dispose();
   }
 
+  // Submit photo to server for prediction
   void submitPhoto() async {
     try {
+      // Get photo from camera, convert to byte array, send to server
       final XFile photoXFile = await cameraController.takePicture();
       final imageData =
           I.decodeImage(await photoXFile.readAsBytes())?.getBytes();
       var response =
           await sendRequest('predict', {'image': imageData}, context);
+      // Alert user based on prediction
       if (response['prediction'] == 0) {
-        alert('Not Pizza', context);
+        result('Not Pizza', context);
       } else if (response['prediction'] == 1) {
-        alert('Pizza', context);
+        result('Pizza', context);
       }
     } catch (e) {
       alert("Error sending photo", context);
@@ -659,6 +668,7 @@ class _HomePageState extends State<HomePage> {
           resizeToAvoidBottomInset: false,
           body: Center(
               child: Column(children: [
+            // Camera preview
             Expanded(
                 child: Container(
               margin: const EdgeInsets.all(10.0),
@@ -675,6 +685,7 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
             )),
+            // Bottom bar
             Container(
                 height: 60.0,
                 width: double.infinity,
@@ -688,6 +699,7 @@ class _HomePageState extends State<HomePage> {
                     )),
                 child: Row(
                   children: [
+                    // Link to YouTube channel
                     IconButton(
                       onPressed: () {
                         launchUrlString('https://www.youtube.com/@kaydenkehe');
@@ -696,6 +708,7 @@ class _HomePageState extends State<HomePage> {
                           size: 35, color: backgroundColorDark),
                     ),
                     const Spacer(),
+                    // Submit photo button
                     OutlinedButton(
                       style: ButtonStyle(
                         padding: MaterialStateProperty.all(
@@ -724,6 +737,7 @@ class _HomePageState extends State<HomePage> {
                       onPressed: () => submitPhoto(),
                     ),
                     const Spacer(),
+                    // Logout button
                     IconButton(
                       onPressed: () {
                         storage.remove('username');
@@ -741,7 +755,6 @@ class _HomePageState extends State<HomePage> {
 }
 
 //! --- ALERT DIALOG WIDGET ---
-// Used to let the user know something has gone wrong
 
 alert(String message, BuildContext context) {
   showDialog(
@@ -760,6 +773,28 @@ alert(String message, BuildContext context) {
               },
             ),
           ],
+        );
+      });
+}
+
+//! --- PREDICTION RESULT WIDGET ---
+
+result(String message, BuildContext context) {
+  showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          contentPadding: const EdgeInsets.fromLTRB(0.0, 0.0, 0.0, 10.0),
+          backgroundColor: backgroundColor,
+          title: Center(
+              child: Text(message,
+                  style: TextStyle(fontSize: 40.0, color: textColor))),
+          content: IconButton(
+            icon: Icon(Icons.close, color: activeColor, size: 40.0),
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+          ),
         );
       });
 }

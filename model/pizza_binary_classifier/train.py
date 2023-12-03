@@ -30,7 +30,7 @@ model.add(layers.Dense(units=20, activation=activations.ReLU()))
 model.add(layers.Dense(units=5, activation=activations.ReLU()))
 model.add(layers.Dense(units=1, activation=activations.Sigmoid()))
 
-model.configure(learning_rate=0.01, epochs=5000, cost_type=costs.BinaryCrossentropy())
+model.configure(learning_rate=0.01, epochs=400, cost_type=costs.BinaryCrossentropy())
 model.train(train_x, train_y, verbose=True)
 model.save(name='parameters_temp.json', dir='..\\..\\backend\\')
 
