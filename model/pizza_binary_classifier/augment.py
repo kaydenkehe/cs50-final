@@ -2,7 +2,6 @@ from os import chdir, mkdir, path, listdir
 from PIL import Image
 from shutil import rmtree
 
-# Dataset - https://www.kaggle.com/datasets/dansbecker/hot-dog-not-hot-dog
 chdir(path.dirname(path.abspath(__file__)))
 chdir('dataset\\')
 
